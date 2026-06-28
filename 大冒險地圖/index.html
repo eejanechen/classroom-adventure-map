@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#17130d">
+  <title>大冒險地圖｜三印之門</title>
+  <style>
+    :root {
+      --ink: #16130e;
+      --panel: #211b13;
+      --paper: #e8d5a7;
+      --gold: #d8aa4c;
+      --gold-light: #ffe39a;
+      --green: #5dbd70;
+      --red: #d5544e;
+      --text: #fff4dc;
+      --muted: #c5b99f;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      width: 100%;
+      min-width: 320px;
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      overflow: hidden;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 50% 40%, #3b3021, #14110d 72%);
+      font-family: ui-rounded, "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+    }
+
+    button,
+    a { font: inherit; }
+
+    .cover {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background: #0d1119;
+      cursor: pointer;
+      opacity: 1;
+      transition: opacity .75s ease, visibility .75s;
+    }
+
+    .cover.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .cover img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+    }
+
+    .cover-hint {
+      position: absolute;
+      left: 50%;
+      bottom: clamp(18px, 5vh, 52px);
+      padding: 10px 18px;
+      color: #fff7df;
+      background: rgba(10, 14, 21, .74);
+      border: 1px solid rgba(255, 231, 166, .55);
+      border-radius: 999px;
+      box-shadow: 0 0 22px rgba(255, 220, 130, .16);
+      font-size: clamp(.75rem, 2vw, .92rem);
+      font-weight: 800;
+      letter-spacing: .08em;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      backdrop-filter: blur(6px);
+      animation: hint 1.1s ease-in-out infinite alternate;
+    }
+
+    @keyframes hint {
+      to { transform: translateX(-50%) translateY(-5px); box-shadow: 0 0 30px rgba(255, 220, 130, .28); }
+    }
+
+    .map-screen {
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 8px;
+    }
+
+    .map-container {
+      position: relative;
+      width: min(calc(100vh * 1.776833), 100vw);
+      max-width: 100%;
+      max-height: 100%;
+      aspect-ratio: 1672 / 941;
+      overflow: visible;
+      box-shadow: 0 25px 80px rgba(0, 0, 0, .55);
+    }
+
+    .map-image {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .hotspot {
+      position: absolute;
+      z-index: 5;
+      display: block;
+      padding: 0;
+      color: inherit;
+      background: transparent;
+      border: 0;
+      border-radius: 999px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background .18s, box-shadow .18s, filter .18s, transform .18s;
+    }
+
+    .hotspot:hover,
+    .hotspot:focus-visible {
+      background: rgba(255, 236, 166, .1);
+      box-shadow:
+        0 0 0 3px rgba(255, 231, 151, .32),
+        0 0 30px 10px rgba(255, 220, 112, .33);
+      filter: brightness(1.16);
+      transform: scale(1.025);
+      outline: none;
+    }
+
+    .hotspot-dynasty {
+      left: 7.6%;
+      top: 31.5%;
+      width: 17.2%;
+      height: 9.5%;
+    }
+
+    .hotspot-idiom {
+      left: 74.2%;
+      top: 31.6%;
+      width: 17.2%;
+      height: 9.5%;
+    }
+
+    .hotspot-warrior {
+      left: 6.5%;
+      top: 80.7%;
+      width: 18.2%;
+      height: 10.4%;
+    }
+
+    .hotspot-gate {
+      left: 42.1%;
+      top: 58.2%;
+      width: 18.3%;
+      height: 10.2%;
+    }
+
+    .stamp {
+      position: absolute;
+      z-index: 8;
+      right: -6%;
+      top: -43%;
+      width: clamp(28px, 4.2vw, 58px);
+      aspect-ratio: 1;
+      display: none;
+      place-items: center;
+      color: white;
+      background: rgba(45, 135, 67, .9);
+      border: 3px double #d9ffe1;
+      border-radius: 50%;
+      box-shadow: 0 4px 0 #235f32, 0 0 17px rgba(93, 189, 112, .55);
+      font-size: clamp(.95rem, 2.5vw, 1.65rem);
+      font-weight: 1000;
+      transform: rotate(-10deg);
+      pointer-events: none;
+    }
+
+    .hotspot.completed .stamp {
+      display: grid;
+      animation: stamp-in .4s cubic-bezier(.2, .8, .3, 1.25);
+    }
+
+    @keyframes stamp-in {
+      from { transform: rotate(-20deg) scale(1.8); opacity: 0; }
+    }
+
+    .info-panel {
+      position: fixed;
+      z-index: 20;
+      top: 13px;
+      right: 13px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px;
+      background: rgba(22, 18, 13, .84);
+      border: 1px solid rgba(226, 190, 107, .56);
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, .34);
+      backdrop-filter: blur(8px);
+    }
+
+    .held-count {
+      padding: 5px 9px;
+      color: #e8ddc6;
+      font-size: .78rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .held-count strong { color: var(--gold-light); }
+
+    .clear-button {
+      min-height: 34px;
+      padding: 6px 10px;
+      color: #fff3db;
+      background: rgba(85, 45, 35, .66);
+      border: 1px solid rgba(212, 114, 89, .5);
+      border-radius: 10px;
+      font-size: .72rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .clear-button:hover { background: #8f352d; }
+
+    .modal-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      background: rgba(13, 10, 7, .78);
+      backdrop-filter: blur(9px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s;
+    }
+
+    .modal-layer.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .gate-modal {
+      position: relative;
+      width: min(760px, 100%);
+      max-height: calc(100vh - 28px);
+      padding: clamp(20px, 4vw, 34px);
+      overflow-y: auto;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 50% 0, rgba(217, 171, 74, .13), transparent 16rem),
+        linear-gradient(145deg, #30271c, #17130e);
+      border: 1px solid #9e7b3b;
+      border-radius: 22px;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, .58), inset 0 0 30px rgba(221, 175, 80, .06);
+      transform: translateY(12px) scale(.94);
+      transition: transform .28s cubic-bezier(.2, .8, .3, 1.2);
+    }
+
+    .modal-layer.show .gate-modal { transform: none; }
+
+    .close-button {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 38px;
+      height: 38px;
+      color: #e7d7b7;
+      background: #241d15;
+      border: 1px solid #7f6437;
+      border-radius: 50%;
+      font-size: 1.05rem;
+      cursor: pointer;
+    }
+
+    .gate-title {
+      margin: 0 0 5px;
+      color: var(--gold-light);
+      text-align: center;
+      font-size: clamp(1.65rem, 5vw, 2.5rem);
+      letter-spacing: .1em;
+    }
+
+    .gate-note {
+      margin: 0 0 23px;
+      color: var(--muted);
+      text-align: center;
+      font-size: .78rem;
+    }
+
+    .slots {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 11px;
+    }
+
+    .cert-slot {
+      min-height: 140px;
+      display: grid;
+      place-items: center;
+      padding: 11px;
+      color: #8e826d;
+      text-align: center;
+      background: rgba(4, 3, 2, .3);
+      border: 2px dashed #6e5a38;
+      border-radius: 16px;
+      transition: transform .15s, background .15s, border-color .15s;
+    }
+
+    .cert-slot::before {
+      content: "◇";
+      display: block;
+      font-size: 2.2rem;
+      line-height: 1;
+    }
+
+    .slot-label {
+      display: block;
+      margin-top: 5px;
+      font-size: .72rem;
+      font-weight: 900;
+      letter-spacing: .1em;
+    }
+
+    .cert-slot.drag-over {
+      color: var(--gold);
+      background: rgba(216, 170, 76, .11);
+      border-color: var(--gold);
+      transform: scale(1.03);
+    }
+
+    .cert-slot.wrong { animation: wrong-slot .32s linear; }
+
+    @keyframes wrong-slot {
+      25% { transform: translateX(-7px); background: rgba(213, 84, 78, .28); border-color: var(--red); }
+      75% { transform: translateX(7px); background: rgba(213, 84, 78, .28); border-color: var(--red); }
+    }
+
+    .cert-slot.filled {
+      background: rgba(93, 189, 112, .12);
+      border-style: solid;
+      border-color: var(--green);
+      box-shadow: inset 0 0 22px rgba(93, 189, 112, .08);
+    }
+
+    .cert-slot.filled::before,
+    .cert-slot.filled .slot-label { display: none; }
+
+    .bag-title {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin: 22px 0 10px;
+      color: var(--gold-light);
+      font-size: .82rem;
+    }
+
+    .bag-title::after {
+      content: "";
+      height: 1px;
+      flex: 1;
+      background: linear-gradient(90deg, #80683d, transparent);
+    }
+
+    .cert-bag {
+      min-height: 112px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 11px;
+      padding: 13px;
+      background: rgba(4, 3, 2, .28);
+      border: 1px solid #665438;
+      border-radius: 15px;
+    }
+
+    .empty-bag { color: #8d816e; font-size: .78rem; }
+
+    .cert-badge {
+      width: 145px;
+      min-height: 82px;
+      display: grid;
+      grid-template-columns: 40px 1fr;
+      align-items: center;
+      gap: 7px;
+      padding: 10px;
+      color: #33240d;
+      background: linear-gradient(145deg, #ffe49a, #c99534);
+      border: 2px solid #ffefb7;
+      border-radius: 13px;
+      box-shadow: 0 5px 0 #775215, 0 8px 18px rgba(0,0,0,.22);
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .cert-badge.dragging { opacity: .32; transform: scale(.93); }
+    .cert-badge.wrong-badge { animation: wrong-badge .32s ease-out; }
+
+    @keyframes wrong-badge {
+      45% { transform: translateY(-8px) rotate(5deg); box-shadow: 0 0 20px var(--red); }
+    }
+
+    .cert-icon { font-size: 1.9rem; }
+    .cert-name { font-size: .74rem; font-weight: 1000; }
+    .cert-name small { display: block; margin-top: 2px; color: #6a4b17; font-size: .57rem; }
+
+    .cert-slot .cert-badge {
+      width: min(150px, 100%);
+      cursor: default;
+      background: linear-gradient(145deg, #c4f1cc, #5dbd70);
+      border-color: #e0ffe5;
+      box-shadow: 0 5px 0 #2d713b;
+      animation: seal-in .36s cubic-bezier(.2, .8, .3, 1.25);
+    }
+
+    @keyframes seal-in {
+      from { transform: scale(1.35) rotate(-6deg); opacity: 0; }
+      70% { transform: scale(.93) rotate(2deg); }
+    }
+
+    .touch-ghost {
+      position: fixed;
+      z-index: 110;
+      width: 130px;
+      min-height: 70px;
+      display: grid;
+      place-items: center;
+      padding: 8px;
+      color: #33240d;
+      text-align: center;
+      background: #f2cd69;
+      border: 2px solid white;
+      border-radius: 13px;
+      box-shadow: 0 14px 28px rgba(0,0,0,.35);
+      font-weight: 900;
+      transform: translate(-50%, -70%);
+      pointer-events: none;
+    }
+
+    .gate-feedback {
+      min-height: 24px;
+      margin: 11px 0 0;
+      color: var(--muted);
+      text-align: center;
+      font-size: .74rem;
+    }
+
+    .victory-screen {
+      display: none;
+      padding: 31px 10px 14px;
+      text-align: center;
+      animation: victory-in .55s cubic-bezier(.2, .8, .3, 1.2);
+    }
+
+    @keyframes victory-in {
+      from { transform: scale(.72); opacity: 0; filter: blur(5px); }
+    }
+
+    .victory-screen.show { display: block; }
+    .victory-icon { font-size: 5rem; filter: drop-shadow(0 0 18px rgba(216,170,76,.45)); }
+    .victory-screen h2 { margin: 8px 0; color: var(--gold-light); font-size: clamp(2rem, 7vw, 3.5rem); }
+    .victory-screen p { margin: 0 0 22px; color: #d4c8af; }
+    .victory-screen strong { color: var(--gold-light); font-size: 1.2rem; }
+
+    .again-button {
+      min-width: 180px;
+      min-height: 49px;
+      color: #281b08;
+      background: var(--gold);
+      border: 0;
+      border-radius: 999px;
+      box-shadow: 0 5px 0 #855c18;
+      font-weight: 1000;
+      cursor: pointer;
+    }
+
+    @media (max-width: 760px) {
+      .info-panel {
+        top: 7px;
+        right: 7px;
+        gap: 3px;
+        padding: 5px;
+      }
+      .held-count { padding-inline: 6px; font-size: .66rem; }
+      .clear-button { padding-inline: 7px; font-size: .64rem; }
+      .slots { grid-template-columns: 1fr; }
+      .cert-slot { min-height: 100px; }
+    }
+
+    @media (max-width: 480px) {
+      .cover-hint { bottom: 15px; }
+      .cert-badge { width: 100%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; }
+    }
+  </style>
+</head>
+<body>
+  <section class="cover" id="cover" aria-label="遊戲開場封面" tabindex="0">
+    <img src="cover.png" alt="大冒險地圖遊戲封面">
+    <span class="cover-hint">點擊任意位置進入冒險</span>
+  </section>
+
+  <aside class="info-panel" aria-label="冒險資訊">
+    <span class="held-count">持有 <strong><span id="cert-count">0</span> / 3</strong></span>
+    <button class="clear-button" id="clear-progress" type="button">🔄 清除進度</button>
+  </aside>
+
+  <main class="map-screen">
+    <div class="map-container">
+      <img class="map-image" src="map-bg.png" alt="古代水墨風大冒險地圖">
+
+      <a class="hotspot hotspot-dynasty" data-cert="cert_dynasty"
+         href="../示範1_朝代配對/index.html" aria-label="進入朝代配對關卡">
+        <span class="stamp" aria-label="已完成">✓</span>
+      </a>
+
+      <a class="hotspot hotspot-idiom" data-cert="cert_idiom"
+         href="../示範2_成語填字/index.html" aria-label="進入成語填字關卡">
+        <span class="stamp" aria-label="已完成">✓</span>
+      </a>
+
+      <a class="hotspot hotspot-warrior" data-cert="cert_warrior"
+         href="../示範3_打怪RPG/index.html" aria-label="進入打怪 RPG 關卡">
+        <span class="stamp" aria-label="已完成">✓</span>
+      </a>
+
+      <button class="hotspot hotspot-gate" id="open-gate" type="button" aria-label="打開中央通關大門"></button>
+    </div>
+  </main>
+
+  <div class="modal-layer" id="gate-layer">
+    <section class="gate-modal" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+      <button class="close-button" id="close-gate" type="button" aria-label="關閉">×</button>
+
+      <div id="gate-puzzle">
+        <h2 class="gate-title" id="gate-title">三印天門</h2>
+        <p class="gate-note">將背包中的憑證拖到正確凹槽，集齊三印才能開門。</p>
+        <div class="slots" id="cert-slots"></div>
+        <h3 class="bag-title">🎒 憑證背包</h3>
+        <div class="cert-bag" id="cert-bag"></div>
+        <p class="gate-feedback" id="gate-feedback">可先放入目前持有的憑證。</p>
+      </div>
+
+      <div class="victory-screen" id="victory-screen">
+        <div class="victory-icon" aria-hidden="true">🏆</div>
+        <h2>冒險完成！</h2>
+        <p>總冒險時長<br><strong id="adventure-time">00 分 00 秒</strong></p>
+        <button class="again-button" id="again-button" type="button">再次冒險</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const CERTIFICATES = [
+      { key: "cert_dynasty", type: "dynasty", label: "朝代", name: "朝代之印", icon: "🎴" },
+      { key: "cert_idiom", type: "idiom", label: "成語", name: "成語之印", icon: "📝" },
+      { key: "cert_warrior", type: "warrior", label: "勇者", name: "勇者之印", icon: "⚔️" }
+    ];
+
+    (() => {
+      const cover = document.querySelector("#cover");
+      const gateLayer = document.querySelector("#gate-layer");
+      const certSlots = document.querySelector("#cert-slots");
+      const certBag = document.querySelector("#cert-bag");
+      const gateFeedback = document.querySelector("#gate-feedback");
+      const gatePuzzle = document.querySelector("#gate-puzzle");
+      const victoryScreen = document.querySelector("#victory-screen");
+      let placed = new Set();
+      let touchState = null;
+
+      function hasCert(key) {
+        const value = localStorage.getItem(key);
+        return value !== null && value !== "false" && value !== "0";
+      }
+
+      function importCertFromQuery() {
+        const params = new URLSearchParams(location.search);
+        const type = params.get("cert");
+        const cert = CERTIFICATES.find((item) => item.type === type);
+        if (cert) {
+          localStorage.setItem(cert.key, "true");
+          try {
+            history.replaceState(null, "", location.pathname);
+          } catch (error) {
+            console.info("憑證已保存。");
+          }
+        }
+      }
+
+      function initialize() {
+        importCertFromQuery();
+        if (!localStorage.getItem("adventure_start")) {
+          localStorage.setItem("adventure_start", String(Date.now()));
+        }
+        if (sessionStorage.getItem("adventure_cover_seen") === "true" || location.hash === "#map-preview") {
+          cover.classList.add("hidden");
+        }
+        refreshProgress();
+      }
+
+      function dismissCover() {
+        if (cover.classList.contains("hidden")) return;
+        sessionStorage.setItem("adventure_cover_seen", "true");
+        cover.classList.add("hidden");
+      }
+
+      function refreshProgress() {
+        let count = 0;
+        document.querySelectorAll(".hotspot[data-cert]").forEach((hotspot) => {
+          const completed = hasCert(hotspot.dataset.cert);
+          hotspot.classList.toggle("completed", completed);
+          if (completed) count++;
+        });
+        document.querySelector("#cert-count").textContent = count;
+      }
+
+      function openGate() {
+        placed = new Set();
+        gatePuzzle.hidden = false;
+        victoryScreen.classList.remove("show");
+        renderGate();
+        gateLayer.classList.add("show");
+      }
+
+      function renderGate() {
+        certSlots.innerHTML = "";
+        certBag.innerHTML = "";
+        gateFeedback.textContent = "可先放入目前持有的憑證。";
+
+        CERTIFICATES.forEach((cert) => {
+          const slot = document.createElement("div");
+          slot.className = "cert-slot";
+          slot.dataset.type = cert.type;
+          slot.innerHTML = `<span class="slot-label">${cert.label}</span>`;
+          addSlotEvents(slot);
+          certSlots.appendChild(slot);
+        });
+
+        const owned = CERTIFICATES.filter((cert) => hasCert(cert.key));
+        if (owned.length === 0) {
+          certBag.innerHTML = `<span class="empty-bag">背包目前是空的，先完成一個關卡吧！</span>`;
+        } else {
+          owned.forEach((cert) => certBag.appendChild(createBadge(cert)));
+        }
+      }
+
+      function createBadge(cert) {
+        const badge = document.createElement("div");
+        badge.className = "cert-badge";
+        badge.dataset.type = cert.type;
+        badge.draggable = true;
+        badge.tabIndex = 0;
+        badge.innerHTML = `
+          <span class="cert-icon" aria-hidden="true">${cert.icon}</span>
+          <span class="cert-name">${cert.name}<small>拖到「${cert.label}」凹槽</small></span>
+        `;
+        badge.addEventListener("dragstart", (event) => {
+          event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer.setData("text/plain", cert.type);
+          badge.classList.add("dragging");
+        });
+        badge.addEventListener("dragend", () => {
+          badge.classList.remove("dragging");
+          document.querySelectorAll(".cert-slot.drag-over").forEach((slot) => slot.classList.remove("drag-over"));
+        });
+        badge.addEventListener("pointerdown", (event) => startTouchDrag(event, badge));
+        return badge;
+      }
+
+      function addSlotEvents(slot) {
+        slot.addEventListener("dragover", (event) => {
+          if (slot.classList.contains("filled")) return;
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "move";
+          slot.classList.add("drag-over");
+        });
+        slot.addEventListener("dragleave", (event) => {
+          if (!slot.contains(event.relatedTarget)) slot.classList.remove("drag-over");
+        });
+        slot.addEventListener("drop", (event) => {
+          event.preventDefault();
+          slot.classList.remove("drag-over");
+          const type = event.dataTransfer.getData("text/plain");
+          const badge = certBag.querySelector(`[data-type="${type}"]`);
+          if (badge) attemptPlace(badge, slot);
+        });
+      }
+
+      function attemptPlace(badge, slot) {
+        if (slot.classList.contains("filled")) return;
+        if (badge.dataset.type === slot.dataset.type) {
+          badge.classList.remove("dragging", "wrong-badge");
+          badge.draggable = false;
+          badge.tabIndex = -1;
+          slot.classList.add("filled");
+          slot.appendChild(badge);
+          placed.add(badge.dataset.type);
+          gateFeedback.textContent = "✓ 憑證已嵌入正確位置！";
+          if (placed.size === 3) setTimeout(openVictory, 500);
+        } else {
+          slot.classList.remove("wrong");
+          badge.classList.remove("wrong-badge", "dragging");
+          void slot.offsetWidth;
+          slot.classList.add("wrong");
+          badge.classList.add("wrong-badge");
+          gateFeedback.textContent = "位置不對，憑證已彈回背包。";
+          setTimeout(() => {
+            slot.classList.remove("wrong");
+            badge.classList.remove("wrong-badge");
+          }, 340);
+        }
+      }
+
+      function startTouchDrag(event, badge) {
+        if (event.pointerType === "mouse" || badge.closest(".cert-slot")) return;
+        event.preventDefault();
+        badge.setPointerCapture(event.pointerId);
+        const ghost = document.createElement("div");
+        ghost.className = "touch-ghost";
+        ghost.textContent = badge.querySelector(".cert-name").childNodes[0].textContent;
+        document.body.appendChild(ghost);
+        touchState = { badge, ghost, pointerId: event.pointerId };
+        badge.classList.add("dragging");
+        moveGhost(event.clientX, event.clientY);
+        badge.addEventListener("pointermove", handleTouchMove);
+        badge.addEventListener("pointerup", endTouchDrag, { once: true });
+        badge.addEventListener("pointercancel", cancelTouchDrag, { once: true });
+      }
+
+      function handleTouchMove(event) {
+        if (!touchState || event.pointerId !== touchState.pointerId) return;
+        event.preventDefault();
+        moveGhost(event.clientX, event.clientY);
+        document.querySelectorAll(".cert-slot.drag-over").forEach((slot) => slot.classList.remove("drag-over"));
+        const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".cert-slot");
+        if (target && !target.classList.contains("filled")) target.classList.add("drag-over");
+      }
+
+      function moveGhost(x, y) {
+        touchState.ghost.style.left = `${x}px`;
+        touchState.ghost.style.top = `${y}px`;
+      }
+
+      function endTouchDrag(event) {
+        if (!touchState || event.pointerId !== touchState.pointerId) return;
+        const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".cert-slot");
+        const { badge } = touchState;
+        cleanupTouchDrag();
+        if (target && !target.classList.contains("filled")) attemptPlace(badge, target);
+      }
+
+      function cancelTouchDrag() {
+        if (touchState) cleanupTouchDrag();
+      }
+
+      function cleanupTouchDrag() {
+        const { badge, ghost } = touchState;
+        badge.classList.remove("dragging");
+        badge.removeEventListener("pointermove", handleTouchMove);
+        document.querySelectorAll(".cert-slot.drag-over").forEach((slot) => slot.classList.remove("drag-over"));
+        ghost.remove();
+        touchState = null;
+      }
+
+      function openVictory() {
+        const started = Number(localStorage.getItem("adventure_start")) || Date.now();
+        const elapsedSeconds = Math.max(0, Math.floor((Date.now() - started) / 1000));
+        const minutes = Math.floor(elapsedSeconds / 60);
+        const seconds = elapsedSeconds % 60;
+        document.querySelector("#adventure-time").textContent =
+          `${String(minutes).padStart(2, "0")} 分 ${String(seconds).padStart(2, "0")} 秒`;
+        gatePuzzle.hidden = true;
+        victoryScreen.classList.add("show");
+      }
+
+      function clearProgress() {
+        ["cert_dynasty", "cert_idiom", "cert_warrior", "adventure_start"].forEach((key) => localStorage.removeItem(key));
+        localStorage.setItem("adventure_start", String(Date.now()));
+        refreshProgress();
+        if (gateLayer.classList.contains("show")) renderGate();
+      }
+
+      cover.addEventListener("click", dismissCover);
+      cover.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") dismissCover();
+      });
+      document.querySelector("#open-gate").addEventListener("click", openGate);
+      document.querySelector("#close-gate").addEventListener("click", () => gateLayer.classList.remove("show"));
+      gateLayer.addEventListener("click", (event) => {
+        if (event.target === gateLayer) gateLayer.classList.remove("show");
+      });
+      document.querySelector("#clear-progress").addEventListener("click", () => {
+        if (confirm("確定要清除三個關卡的冒險進度嗎？")) clearProgress();
+      });
+      document.querySelector("#again-button").addEventListener("click", () => {
+        localStorage.clear();
+        sessionStorage.clear();
+        location.reload();
+      });
+      window.addEventListener("pageshow", refreshProgress);
+
+      initialize();
+    })();
+  </script>
+</body>
+</html>

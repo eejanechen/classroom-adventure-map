@@ -1,0 +1,848 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ead8ac">
+  <meta name="description" content="國語成語填字拖曳練習">
+  <title>成語填字｜書卷小學堂</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #ead8ac;
+      --paper-light: #f7e9c6;
+      --paper-dark: #d3b77a;
+      --ink: #33261c;
+      --muted: #796b58;
+      --red: #a5352d;
+      --red-light: #cf5a4e;
+      --green: #4f835c;
+      --wood: #d8b47b;
+      --gold: #b9863e;
+      --white: #fffaf0;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { min-width: 320px; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 20% 18%, rgba(113, 78, 38, .055) 0 1px, transparent 2px),
+        radial-gradient(circle at 72% 63%, rgba(113, 78, 38, .04) 0 1px, transparent 2px),
+        repeating-linear-gradient(2deg, transparent 0 20px, rgba(120, 84, 43, .018) 21px 22px),
+        var(--paper);
+      background-size: 27px 27px, 39px 39px, auto, auto;
+      font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
+    }
+
+    button { font-family: inherit; }
+
+    .app {
+      width: min(1000px, calc(100% - 24px));
+      margin: 0 auto;
+      padding: 28px 0 46px;
+    }
+
+    .masthead {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 20px;
+      margin-bottom: 19px;
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 5px;
+      color: var(--red);
+      font-size: .7rem;
+      font-weight: 800;
+      letter-spacing: .24em;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 27px;
+      height: 2px;
+      background: var(--red);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 6vw, 3.7rem);
+      line-height: 1;
+      letter-spacing: .14em;
+      text-indent: .14em;
+    }
+
+    h1 span { color: var(--red); }
+
+    .progress {
+      min-width: 136px;
+      padding: 9px 15px;
+      color: var(--muted);
+      text-align: center;
+      background: rgba(255, 250, 240, .44);
+      border: 1px solid rgba(112, 78, 38, .22);
+      border-radius: 8px;
+      font-size: .7rem;
+      letter-spacing: .08em;
+    }
+
+    .progress strong {
+      display: block;
+      color: var(--red);
+      font-size: 1.25rem;
+      letter-spacing: .04em;
+    }
+
+    .book {
+      position: relative;
+      min-height: 640px;
+      padding: clamp(18px, 4vw, 38px);
+      background:
+        linear-gradient(90deg, transparent 49.7%, rgba(102, 70, 36, .08) 50%, transparent 50.3%),
+        linear-gradient(rgba(255, 250, 237, .72), rgba(255, 250, 237, .72)),
+        repeating-linear-gradient(0deg, transparent 0 31px, rgba(130, 92, 48, .035) 32px 33px),
+        var(--paper-light);
+      border: 1px solid #b7955c;
+      border-radius: 10px 17px 13px 8px;
+      box-shadow:
+        0 4px 0 #af8c55,
+        0 9px 0 #7e5d36,
+        0 24px 55px rgba(77, 52, 29, .22);
+    }
+
+    .book::before,
+    .book::after {
+      content: "";
+      position: absolute;
+      top: 16px;
+      bottom: 16px;
+      width: 1px;
+      background: rgba(165, 53, 45, .15);
+    }
+
+    .book::before { left: 17px; }
+    .book::after { right: 17px; }
+
+    .question-heading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin: 0 0 22px;
+      color: var(--muted);
+      font-size: .78rem;
+      letter-spacing: .16em;
+    }
+
+    .question-heading::before,
+    .question-heading::after {
+      content: "◆";
+      color: var(--red);
+      font-size: .55rem;
+    }
+
+    .idiom-board {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(7px, 2vw, 18px);
+      min-height: 150px;
+      margin: 0 auto 29px;
+      padding: 18px;
+      background: rgba(255, 252, 240, .36);
+      border-top: 1px solid rgba(100, 68, 35, .18);
+      border-bottom: 1px solid rgba(100, 68, 35, .18);
+    }
+
+    .fixed-char,
+    .blank-slot {
+      width: clamp(58px, 14vw, 100px);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      font-size: clamp(2.3rem, 8vw, 4.7rem);
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .fixed-char { text-shadow: 2px 2px 0 rgba(111, 76, 38, .1); }
+
+    .blank-slot {
+      position: relative;
+      color: rgba(165, 53, 45, .35);
+      background:
+        linear-gradient(45deg, transparent 49%, rgba(165, 53, 45, .16) 49.5%, rgba(165, 53, 45, .16) 50.5%, transparent 51%),
+        linear-gradient(-45deg, transparent 49%, rgba(165, 53, 45, .16) 49.5%, rgba(165, 53, 45, .16) 50.5%, transparent 51%),
+        linear-gradient(90deg, transparent 49%, rgba(165, 53, 45, .14) 49.5%, rgba(165, 53, 45, .14) 50.5%, transparent 51%),
+        linear-gradient(0deg, transparent 49%, rgba(165, 53, 45, .14) 49.5%, rgba(165, 53, 45, .14) 50.5%, transparent 51%);
+      border: 3px solid var(--red);
+      border-radius: 3px;
+      box-shadow: inset 0 0 0 3px rgba(165, 53, 45, .08);
+      transition: transform .15s, background-color .15s, box-shadow .15s;
+    }
+
+    .blank-slot::before {
+      content: "□";
+      opacity: .34;
+      transform: translateY(-4px);
+    }
+
+    .blank-slot.drag-over {
+      transform: scale(1.05);
+      background-color: rgba(255, 240, 176, .5);
+      box-shadow: 0 0 0 5px rgba(165, 53, 45, .14), inset 0 0 0 3px rgba(165, 53, 45, .08);
+    }
+
+    .blank-slot.wrong { animation: slot-wrong .2s linear; }
+
+    @keyframes slot-wrong {
+      0%, 100% { background-color: transparent; transform: translateX(0); }
+      25% { background-color: rgba(211, 48, 39, .28); transform: translateX(-5px); }
+      75% { background-color: rgba(211, 48, 39, .28); transform: translateX(5px); }
+    }
+
+    .blank-slot.filled::before { display: none; }
+
+    .cards-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 13px;
+      color: var(--muted);
+      font-size: .78rem;
+    }
+
+    .cards-title::after {
+      content: "";
+      height: 1px;
+      flex: 1;
+      background: rgba(91, 61, 32, .18);
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(54px, 1fr));
+      gap: 10px;
+      min-height: 155px;
+      align-content: start;
+    }
+
+    .char-card {
+      position: relative;
+      min-height: 66px;
+      display: grid;
+      place-items: center;
+      padding: 5px;
+      color: #251b14;
+      background:
+        repeating-linear-gradient(5deg, transparent 0 8px, rgba(98, 61, 25, .055) 9px 10px),
+        linear-gradient(145deg, #f5dca5, #d7b475);
+      border: 1px solid #ac8149;
+      border-radius: 7px 10px 6px 9px;
+      box-shadow: 0 4px 0 #9c7442, 0 6px 9px rgba(77, 52, 28, .12);
+      font-size: 1.75rem;
+      font-weight: 900;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+      transition: transform .15s, box-shadow .15s, opacity .15s;
+    }
+
+    .char-card::after {
+      content: "";
+      position: absolute;
+      inset: 4px;
+      border: 1px solid rgba(113, 75, 35, .13);
+      border-radius: 4px;
+      pointer-events: none;
+    }
+
+    .char-card:hover {
+      transform: translateY(-3px) rotate(-1deg);
+      box-shadow: 0 7px 0 #9c7442, 0 10px 14px rgba(77, 52, 28, .17);
+    }
+
+    .char-card.dragging { opacity: .32; transform: scale(.92); }
+
+    .char-card.wrong-card { animation: card-return .2s ease-out; }
+
+    @keyframes card-return {
+      35% { transform: translateY(-6px) rotate(-4deg); color: #a7201a; box-shadow: 0 0 18px rgba(190, 33, 27, .48); }
+      100% { transform: none; }
+    }
+
+    .blank-slot .char-card.matched {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      color: var(--red);
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+      font-size: inherit;
+      cursor: default;
+      animation: seal-in .36s cubic-bezier(.2, .8, .3, 1.25);
+    }
+
+    .blank-slot .char-card.matched::after { display: none; }
+    .blank-slot .char-card.matched:hover { transform: none; box-shadow: none; }
+
+    @keyframes seal-in {
+      0% { transform: scale(1.6) rotate(-6deg); opacity: 0; filter: blur(3px); }
+      65% { transform: scale(.9) rotate(2deg); }
+      100% { transform: none; opacity: 1; filter: none; }
+    }
+
+    .touch-ghost {
+      position: fixed;
+      z-index: 100;
+      width: 66px;
+      height: 66px;
+      display: grid;
+      place-items: center;
+      color: var(--ink);
+      background: #efd49b;
+      border: 2px solid var(--red);
+      border-radius: 9px;
+      box-shadow: 0 12px 25px rgba(65, 42, 22, .28);
+      font-size: 1.8rem;
+      font-weight: 900;
+      transform: translate(-50%, -60%);
+      pointer-events: none;
+    }
+
+    .feedback {
+      min-height: 112px;
+      display: grid;
+      place-items: center;
+      margin-top: 21px;
+      padding: 15px;
+      text-align: center;
+      background: rgba(255, 250, 235, .32);
+      border: 1px dashed rgba(113, 77, 37, .23);
+      border-radius: 8px;
+    }
+
+    .feedback.waiting {
+      color: var(--muted);
+      font-size: .77rem;
+      letter-spacing: .08em;
+    }
+
+    .success { animation: success-in .35s ease-out; }
+
+    @keyframes success-in {
+      from { transform: translateY(7px); opacity: 0; }
+    }
+
+    .success h2 {
+      margin: 0 0 6px;
+      color: var(--green);
+      font-size: 1.45rem;
+    }
+
+    .success p {
+      max-width: 700px;
+      margin: 0 auto 15px;
+      color: #665743;
+      font-size: .87rem;
+      line-height: 1.7;
+    }
+
+    .primary-button {
+      min-width: 150px;
+      min-height: 43px;
+      padding: 8px 22px;
+      color: #fff7e7;
+      background: var(--red);
+      border: 1px solid #70231e;
+      border-radius: 999px;
+      box-shadow: 0 4px 0 #70231e;
+      font-size: .86rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .13s, box-shadow .13s;
+    }
+
+    .primary-button:hover { transform: translateY(-2px); box-shadow: 0 6px 0 #70231e; }
+    .primary-button:active { transform: translateY(2px); box-shadow: 0 2px 0 #70231e; }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(56, 39, 23, .58);
+      backdrop-filter: blur(8px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s;
+    }
+
+    .overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .result {
+      width: min(440px, 100%);
+      padding: 38px 28px 32px;
+      color: var(--ink);
+      text-align: center;
+      background:
+        radial-gradient(circle at 50% 0, rgba(255, 255, 255, .72), transparent 12rem),
+        var(--paper-light);
+      border: 2px solid var(--gold);
+      border-radius: 13px;
+      box-shadow: 0 25px 70px rgba(55, 37, 20, .3);
+      transform: translateY(14px) scale(.92);
+      transition: transform .35s cubic-bezier(.2, .8, .3, 1.2);
+    }
+
+    .overlay.show .result { transform: none; }
+
+    .result-seal {
+      width: 72px;
+      height: 72px;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 14px;
+      color: #fff0cf;
+      background: var(--red);
+      border: 5px double #f2c982;
+      border-radius: 50%;
+      font-size: 2rem;
+      font-weight: 900;
+      transform: rotate(-5deg);
+      box-shadow: 0 5px 0 rgba(102, 36, 27, .2);
+    }
+
+    .result h2 {
+      margin: 0 0 8px;
+      font-size: 2rem;
+      letter-spacing: .12em;
+      text-indent: .12em;
+    }
+
+    .result-summary {
+      margin: 0 0 20px;
+      color: var(--muted);
+      line-height: 1.9;
+    }
+
+    .result-summary strong {
+      color: var(--red);
+      font-size: 1.4rem;
+    }
+
+    @media (max-width: 760px) {
+      .cards-grid { grid-template-columns: repeat(5, minmax(48px, 1fr)); }
+      .book { min-height: 0; background-position: center; }
+    }
+
+    @media (max-width: 520px) {
+      .app { width: min(100% - 14px, 500px); padding-top: 17px; }
+      .masthead { grid-template-columns: 1fr; gap: 13px; }
+      .progress { width: 100%; }
+      .book { padding: 17px 13px 24px; }
+      .idiom-board { gap: 6px; padding-inline: 6px; min-height: 112px; }
+      .fixed-char,
+      .blank-slot { width: clamp(54px, 20vw, 76px); font-size: clamp(2rem, 13vw, 3.3rem); }
+      .cards-grid { grid-template-columns: repeat(5, 1fr); gap: 8px; }
+      .char-card { min-height: 57px; font-size: 1.5rem; }
+      .feedback { min-height: 132px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; }
+    }
+
+    .map-return {
+      position: fixed;
+      z-index: 55;
+      left: 12px;
+      bottom: 12px;
+      padding: 9px 14px;
+      color: #fff8e5;
+      background: rgba(73, 49, 27, .94);
+      border: 1px solid #b9863e;
+      border-radius: 999px;
+      box-shadow: 0 6px 18px rgba(76, 51, 27, .25);
+      font-size: .78rem;
+      font-weight: 800;
+      text-decoration: none;
+      backdrop-filter: blur(7px);
+    }
+
+    .map-return:hover { background: #a5352d; }
+  </style>
+</head>
+<body>
+  <a class="map-return" href="../大冒險地圖/index.html">← 回到大地圖</a>
+  <main class="app">
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">書卷小學堂 · 成語練習</p>
+        <h1>成語<span>填字</span></h1>
+      </div>
+      <div class="progress" aria-live="polite">
+        本場進度
+        <strong><span id="question-number">1</span> / 5</strong>
+      </div>
+    </header>
+
+    <section class="book">
+      <p class="question-heading">請將正確字卡拖進米字格</p>
+      <div class="idiom-board" id="idiom-board" aria-label="成語填字區"></div>
+
+      <h2 class="cards-title">候選字卡</h2>
+      <div class="cards-grid" id="cards-grid" aria-label="十五張候選字卡"></div>
+
+      <div class="feedback waiting" id="feedback" aria-live="polite">
+        每題有兩個缺字，找出正確的字吧！
+      </div>
+    </section>
+  </main>
+
+  <div class="overlay" id="result-overlay">
+    <section class="result" role="dialog" aria-modal="true" aria-labelledby="result-title">
+      <div class="result-seal" aria-hidden="true">成</div>
+      <h2 id="result-title">挑戰完成</h2>
+      <p class="result-summary">
+        完成 <strong>5 / 5</strong> 題<br>
+        總成績 <strong id="final-score">100</strong> 分<br>
+        錯誤嘗試 <span id="mistake-count">0</span> 次
+      </p>
+      <button class="primary-button" id="restart" type="button">重新挑戰</button>
+    </section>
+  </div>
+
+  <script>
+    const QUESTIONS = [
+      { 成語: "一鳴驚人", 缺字: [1, 2], 答案: ["鳴", "驚"], 意思: "比喻平時默默無聞，突然有驚人表現。" },
+      { 成語: "風花雪月", 缺字: [1, 3], 答案: ["花", "月"], 意思: "原指四時景色，後比喻浮華空洞的詩文。" },
+      { 成語: "三番五次", 缺字: [1, 3], 答案: ["番", "次"], 意思: "形容次數很多。" },
+      { 成語: "一字千金", 缺字: [1, 3], 答案: ["字", "金"], 意思: "形容文字價值極高。" },
+      { 成語: "畫龍點睛", 缺字: [1, 3], 答案: ["龍", "睛"], 意思: "比喻在關鍵處點明要旨，使內容更加生動有力。" },
+      { 成語: "守株待兔", 缺字: [1, 3], 答案: ["株", "兔"], 意思: "比喻拘泥成法或妄想不勞而獲。" },
+      { 成語: "亡羊補牢", 缺字: [1, 3], 答案: ["羊", "牢"], 意思: "比喻出了問題後及時補救，仍然來得及。" },
+      { 成語: "刻舟求劍", 缺字: [1, 3], 答案: ["舟", "劍"], 意思: "比喻拘泥固執，不知隨情況變通。" },
+      { 成語: "井底之蛙", 缺字: [0, 3], 答案: ["井", "蛙"], 意思: "比喻見識狹小的人。" },
+      { 成語: "杯弓蛇影", 缺字: [1, 2], 答案: ["弓", "蛇"], 意思: "比喻因疑神疑鬼而產生恐懼。" },
+      { 成語: "掩耳盜鈴", 缺字: [1, 3], 答案: ["耳", "鈴"], 意思: "比喻自欺欺人，明明掩蓋不了卻硬要掩蓋。" },
+      { 成語: "狐假虎威", 缺字: [1, 3], 答案: ["假", "威"], 意思: "比喻倚仗別人的權勢欺壓他人。" },
+      { 成語: "錦上添花", 缺字: [0, 2], 答案: ["錦", "添"], 意思: "比喻在美好的事物上再增添美好。" },
+      { 成語: "雪中送炭", 缺字: [1, 3], 答案: ["中", "炭"], 意思: "比喻在人急需時給予及時的幫助。" },
+      { 成語: "百發百中", 缺字: [1, 3], 答案: ["發", "中"], 意思: "形容射擊準確，也比喻做事很有把握。" }
+    ];
+
+    const DISTRACTOR_CHARS = [
+      "山", "水", "天", "地", "日", "星", "雲", "雨", "風", "雪",
+      "心", "手", "口", "目", "人", "馬", "鳥", "魚", "門", "石",
+      "大", "小", "高", "長", "白", "青", "東", "西", "南", "北",
+      "春", "秋", "海", "火", "光", "明", "葉", "木", "竹", "文",
+      "才", "學", "生", "力", "飛", "走", "開", "知", "同", "來"
+    ];
+
+    (() => {
+      const idiomBoard = document.querySelector("#idiom-board");
+      const cardsGrid = document.querySelector("#cards-grid");
+      const feedback = document.querySelector("#feedback");
+      const questionNumberEl = document.querySelector("#question-number");
+      const resultOverlay = document.querySelector("#result-overlay");
+      const finalScoreEl = document.querySelector("#final-score");
+      const mistakeCountEl = document.querySelector("#mistake-count");
+      const restartButton = document.querySelector("#restart");
+
+      let gameQuestions = [];
+      let questionIndex = 0;
+      let filledCount = 0;
+      let mistakes = 0;
+      let audioContext = null;
+      let touchState = null;
+
+      function shuffle(items) {
+        const result = [...items];
+        for (let i = result.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [result[i], result[j]] = [result[j], result[i]];
+        }
+        return result;
+      }
+
+      function createRoundCards(question) {
+        const answers = [...question.答案];
+        const blocked = new Set([...question.成語, ...answers]);
+        const distractors = shuffle(DISTRACTOR_CHARS.filter((char) => !blocked.has(char))).slice(0, 13);
+        return shuffle([...answers, ...distractors]).map((char, index) => ({
+          id: `q${questionIndex}-card${index}`,
+          char
+        }));
+      }
+
+      function renderQuestion() {
+        const question = gameQuestions[questionIndex];
+        filledCount = 0;
+        questionNumberEl.textContent = questionIndex + 1;
+        idiomBoard.innerHTML = "";
+        cardsGrid.innerHTML = "";
+        feedback.className = "feedback waiting";
+        feedback.textContent = "每題有兩個缺字，找出正確的字吧！";
+
+        [...question.成語].forEach((char, position) => {
+          const answerOrder = question.缺字.indexOf(position);
+          if (answerOrder >= 0) {
+            const slot = document.createElement("div");
+            slot.className = "blank-slot";
+            slot.dataset.answer = question.答案[answerOrder];
+            slot.dataset.position = position;
+            slot.setAttribute("role", "group");
+            slot.setAttribute("aria-label", `第 ${position + 1} 個字的空格`);
+            addDropListeners(slot);
+            idiomBoard.appendChild(slot);
+          } else {
+            const fixedChar = document.createElement("span");
+            fixedChar.className = "fixed-char";
+            fixedChar.textContent = char;
+            idiomBoard.appendChild(fixedChar);
+          }
+        });
+
+        createRoundCards(question).forEach(({ id, char }) => {
+          cardsGrid.appendChild(createCharCard(id, char));
+        });
+      }
+
+      function createCharCard(id, char) {
+        const card = document.createElement("div");
+        card.className = "char-card";
+        card.dataset.cardId = id;
+        card.dataset.char = char;
+        card.draggable = true;
+        card.tabIndex = 0;
+        card.setAttribute("role", "button");
+        card.setAttribute("aria-label", `字卡：${char}`);
+        card.textContent = char;
+
+        card.addEventListener("dragstart", (event) => {
+          if (card.classList.contains("matched")) {
+            event.preventDefault();
+            return;
+          }
+          event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer.setData("text/plain", id);
+          card.classList.add("dragging");
+        });
+
+        card.addEventListener("dragend", () => {
+          card.classList.remove("dragging");
+          document.querySelectorAll(".blank-slot.drag-over").forEach((slot) => slot.classList.remove("drag-over"));
+        });
+
+        card.addEventListener("pointerdown", (event) => startTouchDrag(event, card));
+        return card;
+      }
+
+      function addDropListeners(slot) {
+        slot.addEventListener("dragover", (event) => {
+          if (slot.classList.contains("filled")) return;
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "move";
+          slot.classList.add("drag-over");
+        });
+
+        slot.addEventListener("dragleave", (event) => {
+          if (!slot.contains(event.relatedTarget)) slot.classList.remove("drag-over");
+        });
+
+        slot.addEventListener("drop", (event) => {
+          event.preventDefault();
+          slot.classList.remove("drag-over");
+          const cardId = event.dataTransfer.getData("text/plain");
+          const card = cardsGrid.querySelector(`[data-card-id="${cardId}"]`);
+          if (card) attemptDrop(card, slot);
+        });
+      }
+
+      function attemptDrop(card, slot) {
+        if (slot.classList.contains("filled") || card.classList.contains("matched")) return;
+
+        if (card.dataset.char === slot.dataset.answer) {
+          card.classList.remove("dragging", "wrong-card");
+          card.classList.add("matched");
+          card.draggable = false;
+          card.tabIndex = -1;
+          slot.classList.add("filled");
+          slot.appendChild(card);
+          playBell();
+          filledCount++;
+
+          if (filledCount === 2) {
+            setTimeout(showAnswerFeedback, 360);
+          }
+        } else {
+          mistakes++;
+          slot.classList.remove("wrong");
+          card.classList.remove("wrong-card", "dragging");
+          void slot.offsetWidth;
+          slot.classList.add("wrong");
+          card.classList.add("wrong-card");
+          setTimeout(() => {
+            slot.classList.remove("wrong");
+            card.classList.remove("wrong-card");
+          }, 220);
+        }
+      }
+
+      function showAnswerFeedback() {
+        const question = gameQuestions[questionIndex];
+        feedback.className = "feedback";
+        feedback.innerHTML = `
+          <div class="success">
+            <h2>✓ 答對！</h2>
+            <p><strong>${question.成語}</strong>：${question.意思}</p>
+            <button class="primary-button" id="next-question" type="button">
+              ${questionIndex === gameQuestions.length - 1 ? "查看成績" : "下一題"}
+            </button>
+          </div>
+        `;
+        document.querySelector("#next-question").addEventListener("click", nextQuestion);
+      }
+
+      function nextQuestion() {
+        if (questionIndex < gameQuestions.length - 1) {
+          questionIndex++;
+          renderQuestion();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        } else {
+          showResult();
+        }
+      }
+
+      function showResult() {
+        localStorage.setItem("cert_idiom", "true");
+        document.querySelector(".map-return").href = "../大冒險地圖/index.html?cert=idiom";
+        const score = Math.max(0, 100 - mistakes * 5);
+        finalScoreEl.textContent = score;
+        mistakeCountEl.textContent = mistakes;
+        resultOverlay.classList.add("show");
+        setTimeout(() => restartButton.focus(), 350);
+      }
+
+      function startGame() {
+        gameQuestions = shuffle(QUESTIONS).slice(0, 5);
+        questionIndex = 0;
+        mistakes = 0;
+        resultOverlay.classList.remove("show");
+        renderQuestion();
+      }
+
+      function startTouchDrag(event, card) {
+        if (event.pointerType === "mouse" || card.classList.contains("matched")) return;
+        event.preventDefault();
+        card.setPointerCapture(event.pointerId);
+
+        const ghost = document.createElement("div");
+        ghost.className = "touch-ghost";
+        ghost.textContent = card.dataset.char;
+        document.body.appendChild(ghost);
+
+        touchState = { card, ghost, pointerId: event.pointerId };
+        card.classList.add("dragging");
+        moveTouchGhost(event.clientX, event.clientY);
+
+        card.addEventListener("pointermove", handleTouchMove);
+        card.addEventListener("pointerup", endTouchDrag, { once: true });
+        card.addEventListener("pointercancel", cancelTouchDrag, { once: true });
+      }
+
+      function handleTouchMove(event) {
+        if (!touchState || event.pointerId !== touchState.pointerId) return;
+        event.preventDefault();
+        moveTouchGhost(event.clientX, event.clientY);
+        document.querySelectorAll(".blank-slot.drag-over").forEach((slot) => slot.classList.remove("drag-over"));
+        const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".blank-slot");
+        if (target && !target.classList.contains("filled")) target.classList.add("drag-over");
+      }
+
+      function moveTouchGhost(x, y) {
+        touchState.ghost.style.left = `${x}px`;
+        touchState.ghost.style.top = `${y}px`;
+      }
+
+      function endTouchDrag(event) {
+        if (!touchState || event.pointerId !== touchState.pointerId) return;
+        const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".blank-slot");
+        const { card } = touchState;
+        cleanupTouchDrag();
+        if (target && !target.classList.contains("filled")) attemptDrop(card, target);
+      }
+
+      function cancelTouchDrag() {
+        if (touchState) cleanupTouchDrag();
+      }
+
+      function cleanupTouchDrag() {
+        const { card, ghost } = touchState;
+        card.classList.remove("dragging");
+        card.removeEventListener("pointermove", handleTouchMove);
+        document.querySelectorAll(".blank-slot.drag-over").forEach((slot) => slot.classList.remove("drag-over"));
+        ghost.remove();
+        touchState = null;
+      }
+
+      function getAudioContext() {
+        if (!audioContext) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContext) return null;
+          audioContext = new AudioContext();
+        }
+        if (audioContext.state === "suspended") audioContext.resume();
+        return audioContext;
+      }
+
+      function bellTone(frequency, start, duration, volume) {
+        const context = getAudioContext();
+        if (!context) return;
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(frequency, start);
+        gain.gain.setValueAtTime(.0001, start);
+        gain.gain.exponentialRampToValueAtTime(volume, start + .008);
+        gain.gain.exponentialRampToValueAtTime(.0001, start + duration);
+        oscillator.connect(gain).connect(context.destination);
+        oscillator.start(start);
+        oscillator.stop(start + duration + .02);
+      }
+
+      function playBell() {
+        const context = getAudioContext();
+        if (!context) return;
+        const now = context.currentTime;
+        bellTone(880, now, .28, .06);
+        bellTone(1320, now + .045, .34, .035);
+        bellTone(1760, now + .08, .25, .018);
+      }
+
+      restartButton.addEventListener("click", startGame);
+      startGame();
+    })();
+  </script>
+</body>
+</html>

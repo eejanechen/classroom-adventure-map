@@ -1,0 +1,1214 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111427">
+  <meta name="description" content="答題、打怪、買道具的卡通 RPG 練習遊戲">
+  <title>勇者答題傳說｜打怪 RPG</title>
+  <style>
+    :root {
+      --bg: #0c1020;
+      --panel: #171c34;
+      --panel-2: #202746;
+      --line: #35416b;
+      --text: #f6f5ff;
+      --muted: #9ca8c8;
+      --blue: #58c8ff;
+      --green: #57d686;
+      --yellow: #ffd15c;
+      --orange: #ff9b55;
+      --red: #ff5e68;
+      --purple: #aa83ff;
+      --wood: #8d5a32;
+      --wood-dark: #52331e;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 10%, rgba(88, 200, 255, .12), transparent 27rem),
+        radial-gradient(circle at 90% 85%, rgba(170, 131, 255, .1), transparent 30rem),
+        linear-gradient(rgba(88, 200, 255, .025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(88, 200, 255, .025) 1px, transparent 1px),
+        var(--bg);
+      background-size: auto, auto, 32px 32px, 32px 32px, auto;
+      font-family: ui-rounded, "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+    }
+
+    button { font: inherit; }
+
+    .game {
+      width: min(1060px, calc(100% - 20px));
+      margin: 0 auto;
+      padding: 18px 0 35px;
+    }
+
+    .hud {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding: 11px 14px;
+      background: rgba(23, 28, 52, .95);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .2);
+    }
+
+    .brand {
+      min-width: 0;
+      font-size: clamp(.86rem, 2.8vw, 1.2rem);
+      font-weight: 900;
+      letter-spacing: .06em;
+    }
+
+    .brand span { color: var(--yellow); }
+
+    .stage-badge,
+    .coins {
+      padding: 7px 11px;
+      background: #0f1428;
+      border: 1px solid #394875;
+      border-radius: 11px;
+      font-size: .76rem;
+      font-weight: 800;
+    }
+
+    .stage-badge { color: var(--blue); }
+
+    .coins {
+      min-width: 94px;
+      color: var(--yellow);
+      text-align: center;
+      box-shadow: inset 0 0 13px rgba(255, 209, 92, .04);
+    }
+
+    #coin-count { display: inline-block; }
+    #coin-count.pop { animation: coin-pop .32s cubic-bezier(.2, .8, .3, 1.5); }
+
+    @keyframes coin-pop {
+      50% { transform: scale(1.55) rotate(-5deg); color: white; text-shadow: 0 0 13px var(--yellow); }
+    }
+
+    .battle-card {
+      overflow: hidden;
+      background: linear-gradient(145deg, rgba(30, 38, 71, .98), rgba(16, 20, 38, .98));
+      border: 1px solid var(--line);
+      border-radius: 23px;
+      box-shadow: 0 28px 65px rgba(0, 0, 0, .3);
+    }
+
+    .arena {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 110px 1fr;
+      align-items: end;
+      min-height: 285px;
+      padding: 28px clamp(16px, 4vw, 44px) 18px;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 50% 100%, rgba(101, 117, 185, .26), transparent 45%),
+        linear-gradient(180deg, #252b54 0 67%, #15192e 67% 100%);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .arena::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 12% 24%, rgba(255,255,255,.38) 0 1px, transparent 2px),
+        radial-gradient(circle at 78% 17%, rgba(255,255,255,.28) 0 1px, transparent 2px),
+        radial-gradient(circle at 55% 35%, rgba(255,255,255,.22) 0 1px, transparent 2px);
+      background-size: 60px 60px, 83px 83px, 109px 109px;
+      pointer-events: none;
+    }
+
+    .fighter {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .fighter-name {
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: .7rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+    }
+
+    .sprite-wrap {
+      position: relative;
+      width: clamp(100px, 18vw, 155px);
+      height: clamp(100px, 18vw, 155px);
+      display: grid;
+      place-items: center;
+    }
+
+    .sprite {
+      position: relative;
+      z-index: 2;
+      font-size: clamp(4.3rem, 12vw, 7.2rem);
+      line-height: 1;
+      filter: drop-shadow(0 10px 4px rgba(0, 0, 0, .35));
+      transform-origin: bottom center;
+    }
+
+    .fighter::after {
+      content: "";
+      position: absolute;
+      bottom: 42px;
+      width: 115px;
+      height: 22px;
+      background: rgba(3, 5, 13, .38);
+      border-radius: 50%;
+      filter: blur(3px);
+    }
+
+    .player.attacking .sprite { animation: player-attack .42s ease-out; }
+    .monster.hit .sprite { animation: monster-hit .42s ease-out; }
+    .monster.attacking .sprite { animation: monster-attack .42s ease-out; }
+    .player.hit .sprite { animation: player-hit .3s linear; }
+    .monster.enter .sprite { animation: monster-enter .55s cubic-bezier(.2, .8, .3, 1.2); }
+
+    @keyframes player-attack {
+      45% { transform: translateX(70px) rotate(8deg) scale(1.08); filter: drop-shadow(0 0 18px var(--blue)); }
+    }
+    @keyframes monster-hit {
+      30% { transform: translateX(13px) rotate(8deg); filter: brightness(2) drop-shadow(0 0 18px var(--red)); }
+      60% { transform: translateX(-8px) rotate(-5deg); }
+    }
+    @keyframes monster-attack {
+      45% { transform: translateX(-70px) rotate(-8deg) scale(1.08); }
+    }
+    @keyframes player-hit {
+      25%, 75% { transform: translateX(-8px); filter: sepia(1) saturate(5) drop-shadow(0 0 14px var(--red)); }
+      50% { transform: translateX(8px); }
+    }
+    @keyframes monster-enter {
+      from { transform: translateX(180px) scale(.5); opacity: 0; }
+    }
+
+    .hp-box { width: min(230px, 100%); }
+
+    .hp-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      font-size: .65rem;
+      font-weight: 800;
+    }
+
+    .hp-track {
+      height: 14px;
+      padding: 2px;
+      overflow: hidden;
+      background: #090c18;
+      border: 1px solid #4a5274;
+      border-radius: 999px;
+    }
+
+    .hp-fill {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #3bbd68, #66e68f);
+      border-radius: 999px;
+      box-shadow: 0 0 9px rgba(87, 214, 134, .45);
+      transition: width .45s ease, background .25s;
+    }
+
+    .hp-fill.mid {
+      background: linear-gradient(90deg, #e0a831, #ffe173);
+      box-shadow: 0 0 9px rgba(255, 209, 92, .45);
+    }
+
+    .hp-fill.low {
+      background: linear-gradient(90deg, #d73742, #ff6a73);
+      box-shadow: 0 0 13px rgba(255, 94, 104, .6);
+      animation: hp-danger .46s ease-in-out infinite alternate;
+    }
+
+    @keyframes hp-danger {
+      to { opacity: .55; box-shadow: 0 0 22px var(--red); }
+    }
+
+    .versus {
+      align-self: center;
+      color: var(--yellow);
+      text-align: center;
+      font-size: 1.45rem;
+      font-weight: 1000;
+      font-style: italic;
+      text-shadow: 2px 2px 0 var(--red), 0 0 15px rgba(255, 209, 92, .35);
+    }
+
+    .battle-ui {
+      padding: clamp(15px, 3vw, 26px);
+    }
+
+    .question-panel {
+      position: relative;
+      min-height: 92px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 14px;
+      padding: 15px 18px;
+      text-align: center;
+      background: #f8f0d7;
+      border: 3px solid #d19c42;
+      border-radius: 14px;
+      color: #34291f;
+      box-shadow: 0 5px 0 #8c622e;
+    }
+
+    .question-panel::before {
+      content: "";
+      position: absolute;
+      top: -12px;
+      right: 19%;
+      width: 20px;
+      height: 20px;
+      background: #f8f0d7;
+      border-top: 3px solid #d19c42;
+      border-left: 3px solid #d19c42;
+      transform: rotate(45deg);
+    }
+
+    #question-text {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      font-size: clamp(.95rem, 2.5vw, 1.2rem);
+      line-height: 1.55;
+      font-weight: 900;
+    }
+
+    .answers {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+    }
+
+    .answer-button {
+      min-height: 58px;
+      display: grid;
+      grid-template-columns: 32px 1fr;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 13px 8px 9px;
+      color: var(--text);
+      text-align: left;
+      background: #242b4d;
+      border: 1px solid #495685;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform .14s, background .14s, border-color .14s;
+    }
+
+    .answer-button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      background: #303961;
+      border-color: var(--blue);
+    }
+
+    .answer-button:disabled { cursor: default; opacity: .68; }
+    .answer-button.correct { background: #245e3c; border-color: var(--green); opacity: 1; }
+    .answer-button.wrong { background: #6b2b34; border-color: var(--red); opacity: 1; }
+
+    .answer-label {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      color: #11172a;
+      background: var(--blue);
+      border-radius: 8px;
+      font-size: .78rem;
+      font-weight: 1000;
+    }
+
+    .answer-text { font-size: .84rem; font-weight: 800; line-height: 1.35; }
+
+    .feedback {
+      min-height: 31px;
+      margin: 11px 0 0;
+      color: var(--muted);
+      text-align: center;
+      font-size: .78rem;
+      font-weight: 800;
+    }
+
+    .feedback.good { color: var(--green); }
+    .feedback.bad { color: #ff9097; }
+
+    .actions {
+      display: flex;
+      justify-content: center;
+      margin-top: 8px;
+    }
+
+    .backpack-button {
+      min-height: 43px;
+      padding: 7px 18px;
+      color: var(--yellow);
+      background: #161b32;
+      border: 1px solid #515d88;
+      border-radius: 999px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .backpack-button:hover { border-color: var(--yellow); }
+
+    .backpack {
+      display: none;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+      padding: 11px;
+      background: #101528;
+      border: 1px solid #39456f;
+      border-radius: 13px;
+    }
+
+    .backpack.open { display: grid; }
+
+    .bag-item {
+      min-height: 68px;
+      display: grid;
+      place-items: center;
+      padding: 7px;
+      color: var(--text);
+      text-align: center;
+      background: #202746;
+      border: 1px solid #3b4773;
+      border-radius: 10px;
+      font-size: .7rem;
+    }
+
+    button.bag-item { cursor: pointer; }
+    button.bag-item:hover { border-color: var(--green); }
+    .bag-item b { display: block; font-size: 1rem; }
+
+    .battle-card.flash-good { animation: flash-good .2s ease-out; }
+    .battle-card.shake-bad { animation: shake-bad .3s linear; }
+    .battle-card.critical-flash { animation: critical-flash .48s ease-out; }
+
+    @keyframes flash-good {
+      50% { box-shadow: inset 0 0 65px rgba(87, 214, 134, .5), 0 0 28px rgba(87, 214, 134, .5); }
+    }
+    @keyframes shake-bad {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+    @keyframes critical-flash {
+      35% { box-shadow: inset 0 0 85px rgba(255, 45, 61, .7), 0 0 40px rgba(255, 45, 61, .55); }
+    }
+
+    .critical-text {
+      position: fixed;
+      z-index: 80;
+      top: 38%;
+      left: 50%;
+      color: #fff;
+      font-size: clamp(2.2rem, 9vw, 5rem);
+      font-weight: 1000;
+      font-style: italic;
+      letter-spacing: -.05em;
+      text-shadow: 4px 4px 0 #a90d22, 0 0 28px var(--red);
+      transform: translate(-50%, -50%) scale(.4) rotate(-8deg);
+      pointer-events: none;
+      animation: critical-text .7s cubic-bezier(.2, .8, .3, 1.2) forwards;
+    }
+
+    @keyframes critical-text {
+      35%, 70% { transform: translate(-50%, -50%) scale(1) rotate(-3deg); opacity: 1; }
+      100% { transform: translate(-50%, -75%) scale(1.2) rotate(2deg); opacity: 0; }
+    }
+
+    .modal-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(6, 8, 18, .78);
+      backdrop-filter: blur(8px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s;
+    }
+
+    .modal-layer.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      width: min(560px, 100%);
+      padding: 27px;
+      text-align: center;
+      background: linear-gradient(145deg, #242b4d, #14182d);
+      border: 1px solid #59678f;
+      border-radius: 21px;
+      box-shadow: 0 25px 75px rgba(0, 0, 0, .45);
+      transform: translateY(13px) scale(.94);
+      transition: transform .28s cubic-bezier(.2, .8, .3, 1.2);
+    }
+
+    .modal-layer.show .modal { transform: none; }
+    .modal-icon { font-size: 4rem; line-height: 1; }
+    .modal h2 { margin: 12px 0 7px; font-size: clamp(1.5rem, 6vw, 2.3rem); }
+    .modal p { margin: 0 0 19px; color: var(--muted); line-height: 1.65; }
+
+    .primary-button {
+      min-width: 170px;
+      min-height: 48px;
+      padding: 9px 22px;
+      color: #101425;
+      background: var(--yellow);
+      border: 0;
+      border-radius: 999px;
+      box-shadow: 0 5px 0 #a67820;
+      font-weight: 1000;
+      cursor: pointer;
+    }
+
+    .primary-button:hover { transform: translateY(-2px); box-shadow: 0 7px 0 #a67820; }
+    .primary-button:active { transform: translateY(2px); box-shadow: 0 3px 0 #a67820; }
+
+    .loading-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin: 20px 0 8px;
+    }
+
+    .loading-dots i {
+      width: 11px;
+      height: 11px;
+      background: var(--blue);
+      border-radius: 3px;
+      animation: loading .7s ease-in-out infinite alternate;
+    }
+    .loading-dots i:nth-child(2) { animation-delay: .18s; background: var(--purple); }
+    .loading-dots i:nth-child(3) { animation-delay: .36s; background: var(--yellow); }
+
+    @keyframes loading { to { transform: translateY(-11px) rotate(45deg); } }
+
+    .shop-modal {
+      width: min(840px, 100%);
+      padding: 25px;
+      color: #fff6df;
+      background:
+        repeating-linear-gradient(5deg, transparent 0 15px, rgba(48, 25, 12, .13) 16px 18px),
+        linear-gradient(145deg, #95613a, #5a371f);
+      border: 5px solid #3f2819;
+      box-shadow: inset 0 0 0 2px #c28a52, 0 28px 80px rgba(0,0,0,.5);
+    }
+
+    .shop-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      margin-bottom: 16px;
+    }
+
+    .shop-head h2 { margin: 0; }
+    .shop-coins { color: var(--yellow); font-weight: 1000; }
+
+    .shop-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .shop-item {
+      padding: 17px 12px;
+      color: var(--text);
+      background: rgba(24, 17, 18, .83);
+      border: 1px solid #d29a5f;
+      border-radius: 13px;
+      text-align: center;
+    }
+
+    .shop-item-icon { font-size: 2.6rem; }
+    .shop-item h3 { margin: 6px 0 5px; font-size: .92rem; }
+    .shop-item p { min-height: 40px; margin: 0 0 10px; color: #d5c0a6; font-size: .68rem; }
+    .owned { display: block; margin-bottom: 9px; color: #d7c8b8; font-size: .68rem; }
+
+    .buy-button {
+      width: 100%;
+      min-height: 39px;
+      color: #25180e;
+      background: var(--yellow);
+      border: 0;
+      border-radius: 9px;
+      font-weight: 1000;
+      cursor: pointer;
+    }
+
+    .buy-button:disabled { opacity: .4; cursor: not-allowed; }
+    .shop-message { min-height: 25px; margin: 12px 0 4px; color: #fff0ba; font-size: .75rem; }
+
+    .result-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 18px 0 22px;
+    }
+
+    .result-stat {
+      padding: 11px 6px;
+      background: #101528;
+      border: 1px solid #3c4770;
+      border-radius: 11px;
+      color: var(--muted);
+      font-size: .66rem;
+    }
+    .result-stat strong { display: block; color: var(--yellow); font-size: 1.3rem; }
+
+    .gameover-layer { background: rgba(115, 9, 21, .91); }
+    .gameover-layer .modal { border-color: var(--red); box-shadow: 0 0 55px rgba(255, 94, 104, .38); }
+
+    @media (max-width: 680px) {
+      .game { width: min(100% - 12px, 650px); padding-top: 8px; }
+      .hud { grid-template-columns: 1fr auto; }
+      .stage-badge { grid-row: 2; grid-column: 1 / -1; text-align: center; }
+      .arena { grid-template-columns: 1fr 55px 1fr; min-height: 230px; padding-inline: 8px; }
+      .fighter::after { width: 82px; bottom: 39px; }
+      .answers { grid-template-columns: 1fr; }
+      .shop-grid { grid-template-columns: 1fr; }
+      .shop-item { display: grid; grid-template-columns: 50px 1fr 110px; align-items: center; gap: 8px; text-align: left; padding: 9px; }
+      .shop-item-icon { grid-row: 1 / 4; font-size: 2rem; text-align: center; }
+      .shop-item h3, .shop-item p, .owned { margin: 0; min-height: 0; }
+      .buy-button { grid-column: 3; grid-row: 1 / 4; }
+    }
+
+    @media (max-width: 420px) {
+      .sprite-wrap { width: 90px; height: 105px; }
+      .sprite { font-size: 4rem; }
+      .fighter::after { bottom: 36px; }
+      .hp-label { font-size: .56rem; }
+      .shop-item { grid-template-columns: 42px 1fr 88px; }
+      .backpack { grid-template-columns: 1fr; }
+      .result-stats { grid-template-columns: 1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; }
+    }
+
+    .map-return {
+      position: fixed;
+      z-index: 45;
+      left: 12px;
+      bottom: 12px;
+      padding: 9px 14px;
+      color: #f7f8ff;
+      background: rgba(15, 20, 40, .94);
+      border: 1px solid #58c8ff;
+      border-radius: 999px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, .32);
+      font-size: .78rem;
+      font-weight: 900;
+      text-decoration: none;
+      backdrop-filter: blur(7px);
+    }
+
+    .map-return:hover { color: #111427; background: #ffd15c; border-color: #ffd15c; }
+  </style>
+</head>
+<body>
+  <a class="map-return" href="../大冒險地圖/index.html">← 回到大地圖</a>
+  <main class="game" aria-live="polite">
+    <header class="hud">
+      <div class="brand">⚔️ 勇者<span>答題傳說</span></div>
+      <div class="stage-badge" id="stage-badge">第 1 / 5 關</div>
+      <div class="coins">💰 <span id="coin-count">0</span></div>
+    </header>
+
+    <section class="battle-card" id="battle-card">
+      <div class="arena">
+        <article class="fighter player" id="player">
+          <div class="fighter-name">我方 · 巫師</div>
+          <div class="sprite-wrap"><div class="sprite" aria-hidden="true">🧙</div></div>
+          <div class="hp-box">
+            <div class="hp-label"><span>PLAYER HP</span><span id="player-hp-text">100 / 100</span></div>
+            <div class="hp-track"><div class="hp-fill" id="player-hp-bar"></div></div>
+          </div>
+        </article>
+
+        <div class="versus">VS</div>
+
+        <article class="fighter monster" id="monster">
+          <div class="fighter-name" id="monster-name">野狼</div>
+          <div class="sprite-wrap"><div class="sprite" id="monster-sprite" aria-hidden="true">🐺</div></div>
+          <div class="hp-box">
+            <div class="hp-label"><span>MONSTER HP</span><span id="monster-hp-text">100 / 100</span></div>
+            <div class="hp-track"><div class="hp-fill" id="monster-hp-bar"></div></div>
+          </div>
+        </article>
+      </div>
+
+      <div class="battle-ui">
+        <section class="question-panel"><p id="question-text">冒險即將開始……</p></section>
+        <div class="answers" id="answers"></div>
+        <p class="feedback" id="feedback">載入題庫中</p>
+        <div class="actions">
+          <button class="backpack-button" id="backpack-button" type="button">🎒 背包</button>
+        </div>
+        <div class="backpack" id="backpack">
+          <button class="bag-item" id="use-potion" type="button"><span>🧪 紅藥水</span><b>× <span id="potion-count">0</span></b><small>補 50 HP</small></button>
+          <div class="bag-item"><span>💎 攻擊水晶</span><b>× <span id="crystal-count">0</span></b><small>下次答對暴擊</small></div>
+          <div class="bag-item"><span>🛡 救命符</span><b>× <span id="charm-count">0</span></b><small>瀕死自動復活</small></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-layer show" id="loading-layer">
+    <section class="modal">
+      <div class="modal-icon">📜</div>
+      <h2>正在讀取冒險題庫</h2>
+      <div class="loading-dots" aria-label="載入中"><i></i><i></i><i></i></div>
+      <p id="loading-text">連線至 Google Sheets……</p>
+    </section>
+  </div>
+
+  <div class="modal-layer" id="start-layer">
+    <section class="modal">
+      <div class="modal-icon">🧙</div>
+      <h2>勇者，準備好了嗎？</h2>
+      <p id="source-message">題庫準備完成。回答問題、擊敗五隻怪物吧！</p>
+      <button class="primary-button" id="start-button" type="button">開始冒險</button>
+    </section>
+  </div>
+
+  <div class="modal-layer" id="notice-layer">
+    <section class="modal">
+      <div class="modal-icon" id="notice-icon">🎁</div>
+      <h2 id="notice-title">獲得戰利品</h2>
+      <p id="notice-text"></p>
+      <button class="primary-button" id="notice-button" type="button">繼續</button>
+    </section>
+  </div>
+
+  <div class="modal-layer" id="shop-layer">
+    <section class="modal shop-modal">
+      <div class="shop-head">
+        <h2>🏪 關卡補給站</h2>
+        <div class="shop-coins">💰 <span id="shop-coins">0</span></div>
+      </div>
+      <div class="shop-grid">
+        <article class="shop-item">
+          <div class="shop-item-icon">🧪</div>
+          <h3>紅藥水</h3>
+          <p>戰鬥中使用，恢復 50 HP。</p>
+          <span class="owned">持有：<b id="shop-potions">0</b></span>
+          <button class="buy-button" data-item="potions" data-price="30" type="button">30 金幣</button>
+        </article>
+        <article class="shop-item">
+          <div class="shop-item-icon">💎</div>
+          <h3>攻擊水晶</h3>
+          <p>下一題答對時造成 50 傷害。</p>
+          <span class="owned">持有：<b id="shop-crystals">0</b></span>
+          <button class="buy-button" data-item="crystals" data-price="40" type="button">40 金幣</button>
+        </article>
+        <article class="shop-item">
+          <div class="shop-item-icon">🛡</div>
+          <h3>救命符</h3>
+          <p>HP 歸零時自動復活至 1 HP。</p>
+          <span class="owned">持有：<b id="shop-charms">0</b></span>
+          <button class="buy-button" data-item="charms" data-price="80" type="button">80 金幣</button>
+        </article>
+      </div>
+      <p class="shop-message" id="shop-message">可重複購買，準備好再前往下一關。</p>
+      <button class="primary-button" id="leave-shop" type="button">前往下一關</button>
+    </section>
+  </div>
+
+  <div class="modal-layer" id="victory-layer">
+    <section class="modal">
+      <div class="modal-icon">🏆</div>
+      <h2>五關全破！</h2>
+      <p>你成功擊敗魔王，完成了這場答題冒險。</p>
+      <div class="result-stats">
+        <div class="result-stat">答對題數<strong id="result-correct">0</strong></div>
+        <div class="result-stat">剩餘金幣<strong id="result-coins">0</strong></div>
+        <div class="result-stat">使用藥水<strong id="result-potions">0</strong></div>
+      </div>
+      <button class="primary-button" id="victory-restart" type="button">再玩一次</button>
+    </section>
+  </div>
+
+  <div class="modal-layer gameover-layer" id="gameover-layer">
+    <section class="modal">
+      <div class="modal-icon">💀</div>
+      <h2>GAME OVER</h2>
+      <p>巫師已經沒有力氣了。整理裝備，再挑戰一次吧！</p>
+      <button class="primary-button" id="gameover-restart" type="button">重新開始</button>
+    </section>
+  </div>
+
+  <script>
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQBRwM9oDnpvSPyWoG8U90JN_C0Am4iNMFWH3f3GPwSyB9nyvNLoPwfApgxbjmahSRJUcraVpWAvpHv/pub?output=csv";
+
+    const FALLBACK_QUESTIONS = [
+      { question: "「一鳴驚人」最接近下列哪個意思？", correct: "平時默默無聞，突然有出色表現", options: ["平時默默無聞，突然有出色表現", "聲音非常吵鬧", "每天都很努力", "受到驚嚇而逃跑"] },
+      { question: "下列哪個數是 8 × 7 的答案？", correct: "56", options: ["56", "48", "54", "64"] },
+      { question: "植物製造養分主要需要哪一種能量？", correct: "太陽光", options: ["太陽光", "月光", "風力", "聲音"] },
+      { question: "臺灣最高的山是哪一座？", correct: "玉山", options: ["玉山", "阿里山", "陽明山", "合歡山"] },
+      { question: "「亡羊補牢」告訴我們什麼道理？", correct: "出了問題及時補救仍不算晚", options: ["出了問題及時補救仍不算晚", "做事不必準備", "凡事只靠運氣", "不要飼養動物"] },
+      { question: "1 公里等於多少公尺？", correct: "1000 公尺", options: ["1000 公尺", "100 公尺", "10 公尺", "10000 公尺"] },
+      { question: "水在攝氏幾度時會結冰？", correct: "0 度", options: ["0 度", "10 度", "50 度", "100 度"] },
+      { question: "哪一個標點符號通常用在疑問句末尾？", correct: "？", options: ["？", "！", "，", "；"] },
+      { question: "下列哪一項是良好的網路使用習慣？", correct: "保護個人資料", options: ["保護個人資料", "公開所有密碼", "隨意點擊陌生連結", "把住址告訴網友"] },
+      { question: "地球繞著哪一顆星運行？", correct: "太陽", options: ["太陽", "月球", "北極星", "金星"] },
+      { question: "「畫龍點睛」中的「睛」是指什麼？", correct: "眼睛", options: ["眼睛", "天氣晴朗", "心情", "光線"] },
+      { question: "下列哪一種動物是哺乳類？", correct: "海豚", options: ["海豚", "鯊魚", "烏龜", "企鵝"] }
+    ];
+
+    const MONSTERS = [
+      { name: "野狼", icon: "🐺" },
+      { name: "毒蠍", icon: "🦂" },
+      { name: "惡鬼", icon: "👹" },
+      { name: "巨龍", icon: "🐲" },
+      { name: "魔王", icon: "👑" }
+    ];
+
+    (() => {
+      const $ = (selector) => document.querySelector(selector);
+      const battleCard = $("#battle-card");
+      const playerEl = $("#player");
+      const monsterEl = $("#monster");
+      const monsterNameEl = $("#monster-name");
+      const monsterSpriteEl = $("#monster-sprite");
+      const playerHpText = $("#player-hp-text");
+      const playerHpBar = $("#player-hp-bar");
+      const monsterHpText = $("#monster-hp-text");
+      const monsterHpBar = $("#monster-hp-bar");
+      const stageBadge = $("#stage-badge");
+      const coinCount = $("#coin-count");
+      const questionText = $("#question-text");
+      const answersEl = $("#answers");
+      const feedbackEl = $("#feedback");
+      const backpack = $("#backpack");
+
+      let questionBank = [];
+      let questionDeck = [];
+      let stageIndex = 0;
+      let monsterHp = 100;
+      let player = {};
+      let correctAnswers = 0;
+      let potionsUsed = 0;
+      let retriedAtOne = false;
+      let currentQuestion = null;
+      let locked = true;
+      let afterNotice = null;
+
+      function shuffle(items) {
+        const result = [...items];
+        for (let i = result.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [result[i], result[j]] = [result[j], result[i]];
+        }
+        return result;
+      }
+
+      function parseCSV(text) {
+        const rows = [];
+        let row = [];
+        let field = "";
+        let quoted = false;
+        const cleanText = text.replace(/^\uFEFF/, "");
+
+        for (let i = 0; i < cleanText.length; i++) {
+          const char = cleanText[i];
+          const next = cleanText[i + 1];
+          if (char === '"' && quoted && next === '"') {
+            field += '"';
+            i++;
+          } else if (char === '"') {
+            quoted = !quoted;
+          } else if (char === "," && !quoted) {
+            row.push(field.trim());
+            field = "";
+          } else if ((char === "\n" || char === "\r") && !quoted) {
+            if (char === "\r" && next === "\n") i++;
+            row.push(field.trim());
+            if (row.some((cell) => cell !== "")) rows.push(row);
+            row = [];
+            field = "";
+          } else {
+            field += char;
+          }
+        }
+        row.push(field.trim());
+        if (row.some((cell) => cell !== "")) rows.push(row);
+        return rows;
+      }
+
+      function csvToQuestions(csvText) {
+        const rows = parseCSV(csvText);
+        if (rows.length < 2) throw new Error("CSV 沒有題目");
+        const headers = rows[0].map((header) => header.trim());
+        const questionIndex = headers.indexOf("題目");
+        const optionIndexes = ["A", "B", "C", "D"].map((name) => headers.indexOf(name));
+        if (questionIndex < 0 || optionIndexes[0] < 0) throw new Error("CSV 表頭不符");
+
+        const parsed = rows.slice(1).map((row) => {
+          const question = row[questionIndex]?.trim();
+          const correct = row[optionIndexes[0]]?.trim();
+          const options = optionIndexes
+            .map((index) => index >= 0 ? row[index]?.trim() : "")
+            .filter((option) => option && option !== "空");
+          if (!question || !correct || options.length < 2) return null;
+          return { question, correct, options: [...new Set(options)] };
+        }).filter(Boolean);
+
+        if (parsed.length < 5) throw new Error("有效題目不足五題");
+        return parsed;
+      }
+
+      async function loadQuestions() {
+        const loadingText = $("#loading-text");
+        const startedAt = performance.now();
+        let source = "Google Sheets 線上題庫";
+
+        try {
+          const response = await fetch(CSV_URL, { cache: "no-store" });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          questionBank = csvToQuestions(await response.text());
+          loadingText.textContent = `成功讀取 ${questionBank.length} 題！`;
+        } catch (error) {
+          console.warn("線上題庫載入失敗，改用內建題庫：", error);
+          questionBank = FALLBACK_QUESTIONS;
+          source = "內建備援題庫（目前無法連線 Google Sheets）";
+          loadingText.textContent = "連線失敗，已切換至內建題庫。";
+        }
+
+        const elapsed = performance.now() - startedAt;
+        if (elapsed < 850) await new Promise((resolve) => setTimeout(resolve, 850 - elapsed));
+        $("#source-message").textContent = `已載入 ${questionBank.length} 題｜${source}`;
+        $("#loading-layer").classList.remove("show");
+        $("#start-layer").classList.add("show");
+      }
+
+      function resetPlayer() {
+        player = { hp: 100, coins: 0, potions: 0, crystals: 0, charms: 0 };
+        stageIndex = 0;
+        monsterHp = 100;
+        correctAnswers = 0;
+        potionsUsed = 0;
+        retriedAtOne = false;
+        questionDeck = [];
+        locked = false;
+        closeAllLayers();
+        beginStage();
+      }
+
+      function beginStage() {
+        monsterHp = 100;
+        retriedAtOne = false;
+        locked = true;
+        backpack.classList.remove("open");
+        answersEl.innerHTML = "";
+        const monster = MONSTERS[stageIndex];
+        monsterNameEl.textContent = monster.name;
+        monsterSpriteEl.textContent = monster.icon;
+        stageBadge.textContent = `第 ${stageIndex + 1} / 5 關 · ${monster.name}`;
+        monsterEl.classList.remove("enter");
+        void monsterEl.offsetWidth;
+        monsterEl.classList.add("enter");
+        feedbackEl.className = "feedback";
+        feedbackEl.textContent = `${monster.name} 出現了！選出正確答案發動攻擊。`;
+        questionText.textContent = `${monster.name} 向你發起挑戰！`;
+        updateUI();
+        setTimeout(nextQuestion, 450);
+      }
+
+      function drawQuestion() {
+        if (questionDeck.length === 0) questionDeck = shuffle(questionBank);
+        currentQuestion = questionDeck.pop();
+        const options = shuffle(currentQuestion.options);
+        questionText.textContent = currentQuestion.question;
+        answersEl.innerHTML = "";
+
+        options.forEach((option, index) => {
+          const button = document.createElement("button");
+          button.className = "answer-button";
+          button.type = "button";
+          button.dataset.option = option;
+          button.innerHTML = `
+            <span class="answer-label">${String.fromCharCode(65 + index)}</span>
+            <span class="answer-text"></span>
+          `;
+          button.querySelector(".answer-text").textContent = option;
+          button.addEventListener("click", () => answerQuestion(option, button));
+          answersEl.appendChild(button);
+        });
+        locked = false;
+      }
+
+      function nextQuestion() {
+        if (stageIndex >= MONSTERS.length) return;
+        feedbackEl.className = "feedback";
+        feedbackEl.textContent = player.crystals > 0
+          ? `💎 攻擊水晶待命：下一次答對將造成 50 傷害！`
+          : "選擇答案，幫助巫師施展魔法！";
+        drawQuestion();
+      }
+
+      function answerQuestion(selected, selectedButton) {
+        if (locked) return;
+        locked = true;
+        const buttons = [...answersEl.querySelectorAll(".answer-button")];
+        buttons.forEach((button) => button.disabled = true);
+        const isCorrect = selected === currentQuestion.correct;
+
+        if (isCorrect) {
+          correctAnswers++;
+          const critical = player.crystals > 0;
+          const damage = critical ? 50 : 25;
+          if (critical) player.crystals--;
+          monsterHp = Math.max(0, monsterHp - damage);
+          player.coins += 5;
+          selectedButton.classList.add("correct");
+          feedbackEl.className = "feedback good";
+          feedbackEl.textContent = critical ? "答對！暴擊造成 50 傷害，並獲得 5 金幣！" : "答對！造成 25 傷害，並獲得 5 金幣！";
+          animateAttack(critical);
+          popCoins();
+          updateUI();
+
+          if (monsterHp <= 0) {
+            setTimeout(defeatMonster, 780);
+          } else {
+            setTimeout(nextQuestion, 850);
+          }
+        } else {
+          player.hp = Math.max(0, player.hp - 25);
+          selectedButton.classList.add("wrong");
+          const correctButton = buttons.find((button) => button.dataset.option === currentQuestion.correct);
+          if (correctButton) correctButton.classList.add("correct");
+          feedbackEl.className = "feedback bad";
+          feedbackEl.textContent = `答錯了！正確答案：${currentQuestion.correct}`;
+          animateMonsterAttack();
+          updateUI();
+
+          setTimeout(() => {
+            if (player.hp <= 0) handleDeath();
+            else nextQuestion();
+          }, 2000);
+        }
+      }
+
+      function animateAttack(critical) {
+        battleCard.classList.remove("flash-good", "critical-flash");
+        playerEl.classList.remove("attacking");
+        monsterEl.classList.remove("hit");
+        void battleCard.offsetWidth;
+        playerEl.classList.add("attacking");
+        monsterEl.classList.add("hit");
+        battleCard.classList.add(critical ? "critical-flash" : "flash-good");
+        if (critical) {
+          const text = document.createElement("div");
+          text.className = "critical-text";
+          text.textContent = "CRITICAL!";
+          document.body.appendChild(text);
+          text.addEventListener("animationend", () => text.remove());
+        }
+        setTimeout(() => {
+          playerEl.classList.remove("attacking");
+          monsterEl.classList.remove("hit");
+          battleCard.classList.remove("flash-good", "critical-flash");
+        }, 750);
+      }
+
+      function animateMonsterAttack() {
+        battleCard.classList.remove("shake-bad");
+        monsterEl.classList.remove("attacking");
+        playerEl.classList.remove("hit");
+        void battleCard.offsetWidth;
+        monsterEl.classList.add("attacking");
+        playerEl.classList.add("hit");
+        battleCard.classList.add("shake-bad");
+        setTimeout(() => {
+          monsterEl.classList.remove("attacking");
+          playerEl.classList.remove("hit");
+          battleCard.classList.remove("shake-bad");
+        }, 480);
+      }
+
+      function defeatMonster() {
+        const loot = 20 + Math.floor(Math.random() * 31);
+        player.coins += loot;
+        popCoins();
+        updateUI();
+        feedbackEl.className = "feedback good";
+        feedbackEl.textContent = `擊敗 ${MONSTERS[stageIndex].name}！掉落 ${loot} 金幣。`;
+
+        showNotice("🎁", "怪物已擊敗！", `${MONSTERS[stageIndex].name} 掉落了 ${loot} 枚金幣！`, () => {
+          if (stageIndex === MONSTERS.length - 1) showVictory();
+          else showShop();
+        });
+      }
+
+      function handleDeath() {
+        if (player.charms > 0) {
+          player.charms--;
+          player.hp = 1;
+          updateUI();
+          showNotice("🛡", "救命符發動！", "自動消耗 1 個救命符，巫師以 1 HP 繼續戰鬥。", nextQuestion);
+          return;
+        }
+
+        if (!retriedAtOne) {
+          retriedAtOne = true;
+          player.hp = 1;
+          monsterHp = 100;
+          updateUI();
+          showNotice("💫", "重來這一關", "沒有救命符。怪物恢復 100 HP，你以 1 HP 再挑戰一次！", nextQuestion);
+          return;
+        }
+
+        $("#gameover-layer").classList.add("show");
+      }
+
+      function showNotice(icon, title, text, callback) {
+        locked = true;
+        $("#notice-icon").textContent = icon;
+        $("#notice-title").textContent = title;
+        $("#notice-text").textContent = text;
+        afterNotice = callback;
+        $("#notice-layer").classList.add("show");
+      }
+
+      function showShop() {
+        updateShop();
+        $("#shop-message").textContent = "可重複購買，準備好再前往下一關。";
+        $("#shop-layer").classList.add("show");
+      }
+
+      function buyItem(item, price) {
+        if (player.coins < price) {
+          $("#shop-message").textContent = "金幣不足，再答對幾題或擊敗怪物吧！";
+          return;
+        }
+        player.coins -= price;
+        player[item]++;
+        popCoins();
+        updateUI();
+        updateShop();
+        const names = { potions: "紅藥水", crystals: "攻擊水晶", charms: "救命符" };
+        $("#shop-message").textContent = `購買成功：${names[item]} × 1`;
+      }
+
+      function usePotion() {
+        if (locked) {
+          feedbackEl.className = "feedback bad";
+          feedbackEl.textContent = "目前無法使用道具。";
+          return;
+        }
+        if (player.potions <= 0) {
+          feedbackEl.className = "feedback bad";
+          feedbackEl.textContent = "背包裡沒有紅藥水。";
+          return;
+        }
+        if (player.hp >= 100) {
+          feedbackEl.className = "feedback";
+          feedbackEl.textContent = "HP 已經全滿，不需要喝藥水。";
+          return;
+        }
+        player.potions--;
+        player.hp = Math.min(100, player.hp + 50);
+        potionsUsed++;
+        feedbackEl.className = "feedback good";
+        feedbackEl.textContent = "🧪 使用紅藥水，恢復 50 HP！";
+        updateUI();
+      }
+
+      function showVictory() {
+        localStorage.setItem("cert_warrior", "true");
+        document.querySelector(".map-return").href = "../大冒險地圖/index.html?cert=warrior";
+        $("#result-correct").textContent = correctAnswers;
+        $("#result-coins").textContent = player.coins;
+        $("#result-potions").textContent = potionsUsed;
+        $("#victory-layer").classList.add("show");
+      }
+
+      function updateUI() {
+        playerHpText.textContent = `${player.hp} / 100`;
+        monsterHpText.textContent = `${monsterHp} / 100`;
+        setHpBar(playerHpBar, player.hp);
+        setHpBar(monsterHpBar, monsterHp);
+        coinCount.textContent = player.coins;
+        $("#potion-count").textContent = player.potions;
+        $("#crystal-count").textContent = player.crystals;
+        $("#charm-count").textContent = player.charms;
+      }
+
+      function setHpBar(bar, hp) {
+        bar.style.width = `${Math.max(0, hp)}%`;
+        bar.classList.toggle("mid", hp < 50 && hp >= 20);
+        bar.classList.toggle("low", hp < 20);
+      }
+
+      function popCoins() {
+        coinCount.classList.remove("pop");
+        void coinCount.offsetWidth;
+        coinCount.classList.add("pop");
+      }
+
+      function updateShop() {
+        $("#shop-coins").textContent = player.coins;
+        $("#shop-potions").textContent = player.potions;
+        $("#shop-crystals").textContent = player.crystals;
+        $("#shop-charms").textContent = player.charms;
+        document.querySelectorAll(".buy-button").forEach((button) => {
+          button.disabled = player.coins < Number(button.dataset.price);
+        });
+      }
+
+      function closeAllLayers() {
+        document.querySelectorAll(".modal-layer").forEach((layer) => layer.classList.remove("show"));
+      }
+
+      $("#start-button").addEventListener("click", resetPlayer);
+      $("#notice-button").addEventListener("click", () => {
+        $("#notice-layer").classList.remove("show");
+        const callback = afterNotice;
+        afterNotice = null;
+        if (callback) callback();
+      });
+      $("#backpack-button").addEventListener("click", () => backpack.classList.toggle("open"));
+      $("#use-potion").addEventListener("click", usePotion);
+      document.querySelectorAll(".buy-button").forEach((button) => {
+        button.addEventListener("click", () => buyItem(button.dataset.item, Number(button.dataset.price)));
+      });
+      $("#leave-shop").addEventListener("click", () => {
+        $("#shop-layer").classList.remove("show");
+        stageIndex++;
+        beginStage();
+      });
+      $("#victory-restart").addEventListener("click", resetPlayer);
+      $("#gameover-restart").addEventListener("click", resetPlayer);
+
+      loadQuestions();
+    })();
+  </script>
+</body>
+</html>
